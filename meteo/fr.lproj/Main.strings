@@ -1,0 +1,9 @@
+
+/* Class = "UIButton"; normalTitle = "Recherche"; ObjectID = "BEh-rc-FTu"; */
+"BEh-rc-FTu.normalTitle" = "Recherche";
+
+/* Class = "UILabel"; text = "nom ville"; ObjectID = "Hz1-3I-gtH"; */
+"Hz1-3I-gtH.text" = "nom ville";
+
+/* Class = "UILabel"; text = "Temperature"; ObjectID = "ZBy-Sm-v32"; */
+"ZBy-Sm-v32.text" = "Temperature";
