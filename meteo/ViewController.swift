@@ -7,12 +7,18 @@
 //
 
 import UIKit
+import CoreLocation
 
-class ViewController: UIViewController {
+class ViewController: UIViewController, CLLocationManagerDelegate {
     
     @IBOutlet weak var CityNameTextField: UITextField!
     @IBOutlet weak var CityNameLabel: UILabel!
     @IBOutlet weak var CityTempLabel: UILabel!
+    @IBOutlet weak var CityWeatherImg: UIImageView!
+    
+    var cityNameLocalisation: String = ("" as String?)!
+    
+    let LocationManager = CLLocationManager()
     
     @IBAction func GetDataButtun(sender: AnyObject) {
         
@@ -20,20 +26,15 @@ class ViewController: UIViewController {
         if (endsWithEdu(CityNameTextField.text!) == true) {
             
             
-            
             let params:NSString = CityNameTextField.text!
             
-            let newParams = params.stringByReplacingOccurrencesOfString(" ", withString: "-")
+                let newParams = params.stringByReplacingOccurrencesOfString(" ", withString: "-")
+            
+                let url:NSURL = NSURL(string:"http://api.openweathermap.org/data/2.5/weather?q=\(newParams)&APPID=a74b07463901e2cc9c3ea58f5b55ba3e")!
+                let request:NSMutableURLRequest = NSMutableURLRequest(URL: url)
+
             
             
-            
-            
-            
-            
-            
-            let url:NSURL = NSURL(string:"http://api.openweathermap.org/data/2.5/weather?q=\(newParams)&APPID=a74b07463901e2cc9c3ea58f5b55ba3e")!
-            
-            let request:NSMutableURLRequest = NSMutableURLRequest(URL: url)
             
             request.HTTPMethod = "GET"
             var response: NSURLResponse?
@@ -92,8 +93,6 @@ class ViewController: UIViewController {
                             
                             CityNameLabel.text = nameCity as String
                             
-                            
-                            
                             if let mainTemp = jsonData.valueForKey("main") as? [String: AnyObject] {
                                 if let TempCity = mainTemp["temp"] as? Int {
                                     print("\(TempCity)")
@@ -102,6 +101,17 @@ class ViewController: UIViewController {
                                     
                                     let tempCelsiusString = String(tempCelsius)
                                     CityTempLabel.text = tempCelsiusString as String
+                                    
+                                    let tokenDict: NSArray = jsonData["weather"] as! NSArray
+                                    let finalData:NSObject = tokenDict[0] as! NSObject
+                                    
+                                    let iconWeather:String = finalData.valueForKey("icon") as! String
+                                    print(iconWeather)
+                                    
+                                    let ShowedImg = UIImage(named: iconWeather)! as UIImage;
+                                    
+                                    CityWeatherImg.image = ShowedImg
+
                                 }
                             }
                             
@@ -126,6 +136,7 @@ class ViewController: UIViewController {
             
             
         } else {
+            CityNameTextField.text = cityNameLocalisation
             afficheMessageAlerte("Caractere incorrect", messageAlert: "Veulliez ne pas entrer de chiffre", boutonAlert: "OK")
         }
         
@@ -136,14 +147,54 @@ class ViewController: UIViewController {
         super.viewDidLoad()
         // Do any additional setup after loading the view, typically from a nib.
         
+        self.LocationManager.delegate = self
+        self.LocationManager.desiredAccuracy = kCLLocationAccuracyBest
+        self.LocationManager.requestWhenInUseAuthorization()
+        self.LocationManager.startUpdatingLocation()
+        
         CityNameLabel.text = ""
         CityTempLabel.text = ""
         
+        let tap: UITapGestureRecognizer = UITapGestureRecognizer(target: self, action: "dismissKeyboard")
+        view.addGestureRecognizer(tap)
     }
     
     override func didReceiveMemoryWarning() {
         super.didReceiveMemoryWarning()
         // Dispose of any resources that can be recreated.
+    }
+    
+    func dismissKeyboard() {
+        //Causes the view (or one of its embedded text fields) to resign the first responder status.
+        view.endEditing(true)
+    }
+    
+    func locationManager(manager: CLLocationManager, didUpdateLocations locations: [CLLocation]) {
+        CLGeocoder().reverseGeocodeLocation(manager.location!, completionHandler: {
+            (placemarks, error) -> Void in
+            
+            if error != nil {
+                print("Error")
+            }
+            
+            if let pm = placemarks?.first {
+                self.displayLocationInfo(pm)
+            } else {
+                print("Error data")
+            }
+        })
+    }
+    
+    func displayLocationInfo (placemark: CLPlacemark){
+        self.LocationManager.stopUpdatingLocation()
+        NSLog(placemark.locality!)
+        
+        cityNameLocalisation = placemark.locality!
+        
+    }
+    
+    func locationManager(manager: CLLocationManager, didFailWithError error: NSError) {
+        print("Error:" + error.localizedDescription)
     }
     
     func afficheMessageAlerte(titleAlert: String, messageAlert: String, boutonAlert: String) {
@@ -155,7 +206,7 @@ class ViewController: UIViewController {
         monAlert.addAction(monAction)
         
         self.presentViewController(monAlert, animated: true, completion: nil)
-        
+
     }
     
     func endsWithEdu(str : String) -> Bool {
